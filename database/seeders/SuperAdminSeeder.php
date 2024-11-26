@@ -15,31 +15,87 @@ class SuperAdminSeeder extends Seeder
      */
     public function run()
     {
-        // // Create Super Admin user
-        // $superAdmin = User::create([
-        //     'name' => 'Super Admin',
-        //     'email' => 'superadmin@example.com',
-        //     'password' => bcrypt('password'), // Replace with a secure password
-        // ]);
+        // Create Roles
+        $roles = [
+            'Admin',
+            'Tester',
+            'Manager',
+            'Developer',
+            'Super Admin',
+        ];
 
-        // // Create Super Admin role
-        // $superAdminRole = Role::firstOrCreate(['name' => 'Super Admin']);
+        foreach ($roles as $roleName) {
+            Role::firstOrCreate(['name' => $roleName]);
+        }
 
-        // // Assign all permissions to the Super Admin role
-        $permissions = Permission::all(); // Get all permissions
-        // $superAdminRole->syncPermissions($permissions);
+        // Create Permissions
+        $permissions = [
+            // Bug Permissions
+            'view bugs',
+            'create bugs',
+            'assign bugs',
+            'edit bugs',
+            'close bugs',
 
-        // // Assign the Super Admin role to the user
-        // $superAdmin->assignRole($superAdminRole);
+            // Project Permissions
+            'view projects',
+            'create projects',
+            'edit projects',
+            'delete projects',
 
-        // $this->command->info('Super Admin created successfully!');
-        // get the user
-        $user = User::where('email', 'superadmin@example.com' )->first();
-        // get the role
-        $role = Role::where('name', 'Super Admin')->first();
-        // assigne all permissions to the role
-        $role->syncPermissions($permissions);
-        // assign the role to the user
-        $user->assignRole($role);
+            // User Permissions
+            'view users',
+            'create users',
+            'edit users',
+            'delete users',
+
+            // Settings Permission
+            'settings',
+        ];
+
+        foreach ($permissions as $permissionName) {
+            Permission::firstOrCreate(['name' => $permissionName]);
+        }
+
+        // Assign Permissions to Roles
+        $rolesPermissions = [
+            'Admin' => [
+                'view bugs', 'create bugs', 'assign bugs', 'close bugs',
+                'view projects', 'create projects', 'edit projects', 'delete projects',
+                'view users', 'create users', 'edit users', 'delete users',
+                'settings',
+            ],
+            'Tester' => [
+                'view bugs', 'create bugs', 'close bugs',
+            ],
+            'Manager' => [
+                'view bugs', 'assign bugs', 'close bugs',
+                'view projects', 'create projects', 'edit projects', 'delete projects',
+            ],
+            'Developer' => [
+                'view bugs', 'edit bugs',
+            ],
+        ];
+
+        foreach ($rolesPermissions as $roleName => $rolePermissions) {
+            $role = Role::findByName($roleName);
+            $role->syncPermissions($rolePermissions);
+        }
+
+        // Create Super Admin and Assign All Permissions
+        $superAdminRole = Role::findByName('Super Admin');
+        $superAdminRole->syncPermissions(Permission::all());
+
+        $superAdmin = User::firstOrCreate(
+            ['email' => 'superadmin@example.com'],
+            [
+                'name' => 'Super Admin',
+                'password' => bcrypt('password'),
+            ]
+        );
+
+        $superAdmin->assignRole($superAdminRole);
+
+        $this->command->info('Super Admin, roles, and permissions have been successfully initialized!');
     }
 }
